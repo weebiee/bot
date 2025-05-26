@@ -1,6 +1,13 @@
-def main():
-    print("Hello from weebiee-bot!")
+import asyncio
+
+from weibo.client import Client
+
+
+async def main():
+    with Client(cache_directory='./cache') as client:
+        top_topics = await client.get_top_topics()
+
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
