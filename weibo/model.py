@@ -11,7 +11,7 @@ class Image:
 
 
 class Post:
-    def __init__(self, username: str, text: str, images: list[Image]):
-        self.username = username
+    def __init__(self, poster_name: str, text: str, images: list[Image]):
+        self.username = poster_name
         self.text = text
         self.images = images
