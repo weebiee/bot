@@ -17,7 +17,7 @@ def _get_default_cache_dir() -> str:
 async def _interactive_get_cookies() -> Iterable[tuple[str, str]]:
     from playwright.async_api import async_playwright
     async with async_playwright() as p:
-        browser = await p.chromium.launch_persistent_context(headless=False, user_data_dir='chromium_data')
+        browser = await p.chromium.launch(headless=False)
         page = await browser.new_page()
         await page.goto('https://passport.weibo.com/sso/signin')
         await page.wait_for_url('https://weibo.com', timeout=0)
