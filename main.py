@@ -12,21 +12,21 @@ from weibo.client import async_client, Client
 from weibo.model import Topic
 
 
-async def write_to_csv(writer: csv.DictWriter, write_lock: Lock, topic: Topic, ckp: Checkpoint, client: Client) -> bool:
+async def write_to_csv(writer: csv.DictWriter, write_lock: Lock, topic: Topic, ckp: Checkpoint, client: Client, callback) -> bool:
     next_page = ckp.page + 1
     posts = await client.search(topic.name, next_page)
     if posts is None:
         return True
+    elif not posts:
+        return False
 
     await write_lock.acquire()
     writer.writerows((topic.name, post.username, post.text, *(im.url for im in post.images)) for post in posts)
     ckp.context.amount += len(posts)
     write_lock.release()
 
-    if not posts:
-        return False
-
     ckp.page = next_page
+    await callback()
     return True
 
 
@@ -45,7 +45,7 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
             for chunked_topics in batched(current_working_topics, parallel_tasks):
                 async with TaskGroup() as tg:
                     results = list(tg.create_task(
-                        write_to_csv(output_writer, write_lock, topic, progress[topic.name], client)) for topic in chunked_topics)
+                        write_to_csv(output_writer, write_lock, topic, progress[topic.name], client, callback)) for topic in chunked_topics)
 
                 empty_topics = set(chunked_topics[idx] for idx, r in enumerate(results) if not r.result())
                 if empty_topics:
@@ -77,7 +77,8 @@ async def main():
         async def callback():
             posts.flush()
             ckp_mgr.save(checkpoint_path)
-            pbar.update(n=ckp_mgr.amount)
+            pbar.n = ckp_mgr.amount
+            pbar.refresh()
 
         await scrap(posts, ckp_mgr, args.parallelism, args.interval, target_amount, callback)
 
