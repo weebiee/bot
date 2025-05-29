@@ -14,6 +14,9 @@ from weibo.model import Topic
 async def write_to_csv(writer: csv.DictWriter, topic: Topic, ckp: Checkpoint, client: Client) -> bool:
     next_page = ckp.page + 1
     posts = await client.search(topic.name, next_page)
+    if posts is None:
+        return True
+
     writer.writerows((topic.name, post.username, post.text, *(im.url for im in post.images)) for post in posts)
     ckp.context.amount += len(posts)
     if not posts:

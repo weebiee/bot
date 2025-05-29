@@ -67,7 +67,7 @@ class Client:
         response = await self.__http_client.get(url, headers=headers)
         return response.status == 200
 
-    async def search(self, query: str, page_index: int) -> list[Post]:
+    async def search(self, query: str, page_index: int) -> list[Post] | None:
         from urllib.parse import quote
         url = f'https://s.weibo.com/weibo?q={quote(query, safe='')}&page={page_index}&t=31'
         headers = {
@@ -83,7 +83,11 @@ class Client:
             await self.sign_in()
             response = await self.__http_client.get(url, headers=headers)
 
-        bs = BeautifulSoup(await response.text(), 'lxml')
+        res_text = await response.text()
+        if len(res_text) < 100:
+            return None
+
+        bs = BeautifulSoup(res_text, 'lxml')
         posts = []
         for tag in bs.find_all(attrs={'action-type': 'feed_list_item', 'class': 'card-wrap'}):
             post = tag.find('p', attrs={'class': 'txt', 'node-type': 'feed_list_content_full'})
