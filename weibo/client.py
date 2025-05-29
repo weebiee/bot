@@ -54,6 +54,10 @@ class Client:
         realtime_items = (await response.json())['data']['realtime']
         return list(Topic(name=item['word'], rank=item['rank'], count_posts=item['num']) for item in realtime_items)
 
+    async def sign_in(self):
+        new_cookies = await _interactive_get_cookies()
+        self.__http_client.cookie_jar.update_cookies(new_cookies)
+
     async def search(self, query: str, page_index: int) -> list[Post]:
         from yarl import URL
         url = URL(f'https://s.weibo.com/weibo?q={query}&page={page_index}', encoded=True)
@@ -62,8 +66,7 @@ class Client:
         }
         response = await self.__http_client.get(url, headers=headers)
         if response.status == 403:
-            new_cookies = await _interactive_get_cookies()
-            self.__http_client.cookie_jar.update_cookies(new_cookies)
+            await self.sign_in()
             response = await self.__http_client.get(url, headers=headers)
 
         bs = BeautifulSoup(await response.text(), 'lxml')
