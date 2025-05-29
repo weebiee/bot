@@ -4,7 +4,7 @@ from asyncio import TaskGroup
 from itertools import batched
 from typing import IO
 
-import tqdm
+import tqdm.asyncio as tqdm
 
 from ckp import Checkpoint, ProgressManager, progress_manager
 from weibo.client import async_client, Client
@@ -17,14 +17,13 @@ async def write_to_csv(writer: csv.DictWriter, topic: Topic, ckp: Checkpoint, cl
     writer.writerows((topic.name, post.username, post.text, *(im.url for im in post.images)) for post in posts)
     ckp.context.amount += len(posts)
     if not posts:
-        print(f'Not proceeding because page {next_page} of topic "{topic.name}" is empty')
         return False
 
     ckp.page = next_page
     return True
 
 
-async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int, target_amount: int, callback):
+async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int, interval: float, target_amount: int, callback):
     output_writer = csv.writer(output)
 
     async with async_client(cache_dir='./cache') as client:
@@ -41,9 +40,11 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
                         write_to_csv(output_writer, topic, progress[topic.name], client)) for topic in chunked_topics)
 
                 empty_topics = set(chunked_topics[idx] for idx, r in enumerate(results) if not r.result())
-                next_nonempty_topics -= empty_topics
+                if empty_topics:
+                    print(f'Empty topics: {', '.join(topic.name for topic in empty_topics)}')
 
-                await asyncio.sleep(30)
+                await asyncio.sleep(interval)
+                next_nonempty_topics -= empty_topics
 
                 await callback()
                 if progress.amount >= target_amount:
@@ -65,7 +66,7 @@ async def main():
             ckp_mgr.save(checkpoint_path)
             pbar.update(n=ckp_mgr.amount)
 
-        await scrap(posts, ckp_mgr, 12, target_amount, callback)
+        await scrap(posts, ckp_mgr, 1, 10, target_amount, callback)
 
 
 if __name__ == "__main__":

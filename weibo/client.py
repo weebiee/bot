@@ -71,7 +71,12 @@ class Client:
         from urllib.parse import quote
         url = f'https://s.weibo.com/weibo?q={quote(query, safe='')}&page={page_index}&t=31'
         headers = {
-            'Host': 's.weibo.com'
+            'Host': 's.weibo.com',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
         }
         response = await self.__http_client.get(url, headers=headers)
         if response.status == 403:
