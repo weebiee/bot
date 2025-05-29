@@ -68,8 +68,8 @@ class Client:
         return response.status == 200
 
     async def search(self, query: str, page_index: int) -> list[Post]:
-        from yarl import URL
-        url = URL(f'https://s.weibo.com/weibo?q={query}&page={page_index}', encoded=True)
+        from urllib.parse import quote
+        url = f'https://s.weibo.com/weibo?q={quote(query, safe='')}&page={page_index}&t=31'
         headers = {
             'Host': 's.weibo.com'
         }
