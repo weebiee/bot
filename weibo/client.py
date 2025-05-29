@@ -58,6 +58,15 @@ class Client:
         new_cookies = await _interactive_get_cookies()
         self.__http_client.cookie_jar.update_cookies(new_cookies)
 
+    async def is_signed_in(self) -> bool:
+        from yarl import URL
+        url = URL(f'https://s.weibo.com/weibo?q=我和佛祖打CS', encoded=True)
+        headers = {
+            'Host': 's.weibo.com'
+        }
+        response = await self.__http_client.get(url, headers=headers)
+        return response.status == 200
+
     async def search(self, query: str, page_index: int) -> list[Post]:
         from yarl import URL
         url = URL(f'https://s.weibo.com/weibo?q={query}&page={page_index}', encoded=True)

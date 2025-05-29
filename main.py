@@ -26,7 +26,9 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
     output_writer = csv.writer(output)
 
     async with async_client(cache_dir='./cache') as client:
-        await client.sign_in()
+        if not await client.is_signed_in():
+            await client.sign_in()
+
         top_topics = await client.get_top_topics()
         for chunked_topics in batched(top_topics, parallel_tasks):
             async with TaskGroup() as tg:
