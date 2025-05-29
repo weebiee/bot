@@ -1,5 +1,6 @@
 import asyncio
 import csv
+from argparse import ArgumentParser
 from asyncio import TaskGroup
 from itertools import batched
 from typing import IO
@@ -60,6 +61,11 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
 
 
 async def main():
+    arg_parser = ArgumentParser()
+    arg_parser.add_argument('--parallelism', '-p', type=int, default=8)
+    arg_parser.add_argument('--interval', '-I', type=float, default=30)
+    args = arg_parser.parse_args()
+
     checkpoint_path = 'scrapping.ckpt'
     target_amount = 100_000
     with progress_manager(checkpoint_path) as ckp_mgr, open('posts.csv', 'a+') as posts, tqdm.tqdm(
@@ -69,7 +75,7 @@ async def main():
             ckp_mgr.save(checkpoint_path)
             pbar.update(n=ckp_mgr.amount)
 
-        await scrap(posts, ckp_mgr, 1, 10, target_amount, callback)
+        await scrap(posts, ckp_mgr, args.parallelism, args.interval, target_amount, callback)
 
 
 if __name__ == "__main__":
