@@ -43,6 +43,8 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
                 empty_topics = set(chunked_topics[idx] for idx, r in enumerate(results) if not r.result())
                 next_nonempty_topics -= empty_topics
 
+                await asyncio.sleep(30)
+
                 await callback()
                 if progress.amount >= target_amount:
                     break
