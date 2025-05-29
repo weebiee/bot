@@ -1,7 +1,7 @@
 import asyncio
 import csv
 from argparse import ArgumentParser
-from asyncio import TaskGroup
+from asyncio import TaskGroup, Lock
 from itertools import batched
 from typing import IO
 
@@ -12,14 +12,17 @@ from weibo.client import async_client, Client
 from weibo.model import Topic
 
 
-async def write_to_csv(writer: csv.DictWriter, topic: Topic, ckp: Checkpoint, client: Client) -> bool:
+async def write_to_csv(writer: csv.DictWriter, write_lock: Lock, topic: Topic, ckp: Checkpoint, client: Client) -> bool:
     next_page = ckp.page + 1
     posts = await client.search(topic.name, next_page)
     if posts is None:
         return True
 
+    await write_lock.acquire()
     writer.writerows((topic.name, post.username, post.text, *(im.url for im in post.images)) for post in posts)
     ckp.context.amount += len(posts)
+    write_lock.release()
+
     if not posts:
         return False
 
@@ -29,6 +32,7 @@ async def write_to_csv(writer: csv.DictWriter, topic: Topic, ckp: Checkpoint, cl
 
 async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int, interval: float, target_amount: int, callback):
     output_writer = csv.writer(output)
+    write_lock = Lock()
 
     async with async_client(cache_dir='./cache') as client:
         if not await client.is_signed_in():
@@ -41,7 +45,7 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
             for chunked_topics in batched(current_working_topics, parallel_tasks):
                 async with TaskGroup() as tg:
                     results = list(tg.create_task(
-                        write_to_csv(output_writer, topic, progress[topic.name], client)) for topic in chunked_topics)
+                        write_to_csv(output_writer, write_lock, topic, progress[topic.name], client)) for topic in chunked_topics)
 
                 empty_topics = set(chunked_topics[idx] for idx, r in enumerate(results) if not r.result())
                 if empty_topics:
