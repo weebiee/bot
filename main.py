@@ -16,7 +16,10 @@ async def write_to_csv(writer: csv.DictWriter, topic: Topic, ckp: Checkpoint, cl
     posts = await client.search(topic.name, next_page)
     writer.writerows((topic.name, post.username, post.text, *(im.url for im in post.images)) for post in posts)
     ckp.context.amount += len(posts)
-    ckp.page = next_page
+    if not posts:
+        print(f'Not proceeding because page {next_page} of topic "{topic.name}" is empty')
+    else:
+        ckp.page = next_page
 
 
 async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int, target_amount: int, callback):
@@ -30,11 +33,11 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
                     tg.create_task(
                         write_to_csv(output_writer, topic, progress[topic.name], client))
             await callback()
-            if progress.amount > target_amount:
+            if progress.amount >= target_amount:
                 break
 
 
-def main():
+async def main():
     checkpoint_path = 'scrapping.ckpt'
     target_amount = 100_000
     with progress_manager(checkpoint_path) as ckp_mgr, open('posts.csv', 'a+') as posts, tqdm.tqdm(
@@ -44,8 +47,8 @@ def main():
             ckp_mgr.save(checkpoint_path)
             pbar.update(n=ckp_mgr.amount)
 
-        asyncio.run(scrap(posts, ckp_mgr, 12, target_amount, callback))
+        await scrap(posts, ckp_mgr, 12, target_amount, callback)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

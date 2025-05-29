@@ -24,7 +24,6 @@ def progress_manager(file_path: str | PathLike[str]):
                 b = fd.read(1)
     else:
         amount = 0
-        file_path.touch()
 
     manager = ProgressManager(amount, ckpts)
     yield manager
