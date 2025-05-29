@@ -2,7 +2,7 @@ import asyncio
 import csv
 from asyncio import TaskGroup
 from itertools import batched
-from typing import IO, Callable
+from typing import IO
 
 import tqdm
 
@@ -30,6 +30,8 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
                     tg.create_task(
                         write_to_csv(output_writer, topic, progress[topic.name], client))
             await callback()
+            if progress.amount > target_amount:
+                break
 
 
 def main():
