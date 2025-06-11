@@ -49,7 +49,7 @@ async def scrap(output: IO[str], progress: ProgressManager, parallel_tasks: int,
 
                 empty_topics = set(chunked_topics[idx] for idx, r in enumerate(results) if not r.result())
                 if empty_topics:
-                    print(f'Empty topics: {', '.join(topic.name for topic in empty_topics)}')
+                    print(f'Empty topics: {', '.join(f'{topic.name} (p{progress[topic].page})' for topic in empty_topics)}')
 
                 await asyncio.sleep(interval)
                 next_nonempty_topics -= empty_topics
