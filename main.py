@@ -21,7 +21,7 @@ async def write_to_csv(writer: csv.DictWriter, write_lock: Lock, topic: Topic, c
         return False
 
     await write_lock.acquire()
-    writer.writerows((topic.name, post.username, post.text, *(im.url for im in post.images)) for post in posts)
+    writer.writerows((topic.name, post.poster_name, post.text, *(im.url for im in post.images)) for post in posts)
     ckp.context.amount += len(posts)
     write_lock.release()
 
