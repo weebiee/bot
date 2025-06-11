@@ -37,9 +37,10 @@ async def async_client(cache_dir: str | None = None) -> AsyncGenerator['Client',
         cookies_jar.load(cookies_path)
 
     async with ClientSession(cookie_jar=cookies_jar) as http_client:
-        yield Client(http_client)
-
-    cookies_jar.save(cookies_path)
+        try:
+            yield Client(http_client)
+        finally:
+            cookies_jar.save(cookies_path)
 
 
 class Client:
