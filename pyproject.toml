@@ -10,5 +10,6 @@ dependencies = [
     "lxml>=5.4.0",
     "platformdirs>=4.3.8",
     "playwright>=1.52.0",
+    "prettytable>=3.16.0",
     "tqdm>=4.67.1",
 ]
